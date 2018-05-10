@@ -1,0 +1,269 @@
+#+OPTIONS: ':nil *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline author:t
+#+OPTIONS: broken-links:nil c:nil creator:nil d:(not "LOGBOOK") date:t e:t
+#+OPTIONS: email:nil f:t inline:t num:t p:nil pri:nil prop:nil stat:t tags:t
+#+OPTIONS: tasks:t tex:t timestamp:t title:t toc:t todo:t |:t
+#+TITLE: README
+#+DATE: <2018-04-27 p>
+#+AUTHOR: Gergely Szabo
+#+EMAIL: gergely.szabo@origoss.com
+#+LANGUAGE: en
+#+SELECT_TAGS: export
+#+EXCLUDE_TAGS: noexport
+#+CREATOR: Emacs 25.2.2 (Org mode 9.1.12)
+
+* Introduction
+
+  This directory contains scripts and descriptions that can be used to build and
+  then push Docker images in Kubernetes.
+
+* Usage
+** Creating the Docker registry secret
+*** Option1: By reusing the local Docker config
+
+    If you log in to a Docker registry using the [[https://docs.docker.com/engine/reference/commandline/login/][docker login]] command the file
+    ~$HOME/.docker/config.json~ is being created. We can reuse that file for
+    creating the Docker registry secret.
+
+    #+BEGIN_SRC bash :results verbatim
+      kubectl create secret generic docker-image-builder-secret \
+              --from-file=.dockerconfigjson=${HOME}/.docker/config.json
+    #+END_SRC
+
+    #+RESULTS:
+    : secret "docker-image-builder-secret" created
+
+*** Option2: By giving the authentication details
+
+    Create a secret in your Kubernetes cluster that stores your Docker registry
+    credentials:
+
+    #+BEGIN_SRC bash :results verbatim :exports both
+     kubectl create secret docker-registry docker-image-builder-secret \
+             --docker-server=DOCKER_REGISTRY_SERVER                    \
+             --docker-username=DOCKER_USER                             \
+             --docker-password=DOCKER_PASSWORD                         \
+             --docker-email=DOCKER_EMAIL
+    #+END_SRC
+
+    #+RESULTS:
+    : secret "docker-image-builder-secret" created
+
+** Building and pushing the Docker image
+
+   After the Docker secret and build configuration is stored you can start the
+   job that builds and pushes the Docker image:
+   #+BEGIN_SRC bash :results verbatim :exports both
+     yemplate -s "gitrepo=https://github.com/origoss/dockergit.git" \
+              -s "tags[0]=docker.origoss.local/dockergit:latest"    \
+              -s "tags[1]=origoss/dockergit:18.04.0-ce"             \
+              -s "tags[2]=origoss/dockergit:latest"                 \
+              -t docker-build.yaml.t |                              \
+         kubectl apply -f -
+   #+END_SRC
+
+   #+RESULTS:
+   : job.batch "docker-image-builder" created
+
+   After the job is started you can check the status of the started pods with
+   the following command:
+   #+BEGIN_SRC bash :results verbatim :exports both
+     kubectl get job/docker-image-builder \
+             --template="Job's pod status:
+     Active: {{or .status.active "0"}} 
+     Succ: {{or .status.succeeded "0"}}
+     Fail: {{or .status.failed "0"}}"
+   #+END_SRC
+
+   #+RESULTS:
+   : Job's pod status:
+   : Active: 1 
+   : Succ: 0
+   : Fail: 0
+
+   Use can use the simple ~waitjob.sh~ script that waits until the job succeeds
+   or fails:
+   #+BEGIN_SRC bash :results verbatim :exports both
+     ./waitjob.sh docker-image-builder
+   #+END_SRC
+
+   #+RESULTS:
+   : active: 1
+   : active: 1
+   : active: 1
+   : active: 1
+   : active: 1
+   : active: 1
+   : active: 1
+   : active: 1
+   : Success
+
+   To list the started pods:
+   #+BEGIN_SRC bash :results verbatim :exports both
+     kubectl get pods \
+             -l controller-uid=$(kubectl get job/docker-image-builder \
+                                         --template="{{.metadata.uid}}")
+   #+END_SRC
+
+   #+RESULTS:
+   : NAME                         READY     STATUS      RESTARTS   AGE
+   : docker-image-builder-fzkg8   0/1       Completed   0          24s
+
+   If needed, the logs of a pod can be checked
+   #+BEGIN_SRC bash :results verbatim :exports both
+   kubectl logs docker-image-builder-fzkg8
+   #+END_SRC
+
+   #+RESULTS:
+   #+begin_example
+   docker build -t docker.origoss.local/dockergit:latest -t origoss/dockergit:18.04.0-ce -t origoss/dockergit:latest  .
+   Sending build context to Docker daemon    128kB
+   Step 1/2 : FROM docker:18.04.0-ce
+    ---> 41e946672182
+   Step 2/2 : RUN apk add --no-cache git
+    ---> Using cache
+    ---> b64c04925efb
+   Successfully built b64c04925efb
+   docker push docker.origoss.local/dockergit:latest
+   The push refers to a repository [docker.origoss.local/dockergit]
+   1760eedac57c: Preparing
+   b446e0d8c3ad: Preparing
+   9b4ada052f34: Preparing
+   ecbc5c1a59c8: Preparing
+   b09386d6aa0f: Preparing
+   1ed7a5e2d1b3: Preparing
+   cd7100a72410: Preparing
+   1ed7a5e2d1b3: Waiting
+   cd7100a72410: Waiting
+   1760eedac57c: Layer already exists
+   ecbc5c1a59c8: Layer already exists
+   b09386d6aa0f: Layer already exists
+   b446e0d8c3ad: Layer already exists
+   9b4ada052f34: Layer already exists
+   1ed7a5e2d1b3: Layer already exists
+   cd7100a72410: Layer already exists
+   latest: digest: sha256:66194bcef7519f144535e78c84b9acbdfd4d06b3fb4f3757b28b9b36a7a48d73 size: 1782
+   docker push origoss/dockergit:18.04.0-ce
+   The push refers to a repository [docker.io/origoss/dockergit]
+   1760eedac57c: Preparing
+   b446e0d8c3ad: Preparing
+   9b4ada052f34: Preparing
+   ecbc5c1a59c8: Preparing
+   b09386d6aa0f: Preparing
+   1ed7a5e2d1b3: Preparing
+   cd7100a72410: Preparing
+   1ed7a5e2d1b3: Waiting
+   cd7100a72410: Waiting
+   9b4ada052f34: Layer already exists
+   b446e0d8c3ad: Layer already exists
+   b09386d6aa0f: Layer already exists
+   ecbc5c1a59c8: Layer already exists
+   1760eedac57c: Layer already exists
+   1ed7a5e2d1b3: Layer already exists
+   cd7100a72410: Layer already exists
+   18.04.0-ce: digest: sha256:ca29af0618444f37303ed2df1948e440200bbe70e537c0c3cfb0b9afbfad3249 size: 1782
+   docker push origoss/dockergit:latest
+   The push refers to a repository [docker.io/origoss/dockergit]
+   1760eedac57c: Preparing
+   b446e0d8c3ad: Preparing
+   9b4ada052f34: Preparing
+   ecbc5c1a59c8: Preparing
+   b09386d6aa0f: Preparing
+   1ed7a5e2d1b3: Preparing
+   cd7100a72410: Preparing
+   1ed7a5e2d1b3: Waiting
+   cd7100a72410: Waiting
+   9b4ada052f34: Layer already exists
+   b09386d6aa0f: Layer already exists
+   b446e0d8c3ad: Layer already exists
+   1760eedac57c: Layer already exists
+   ecbc5c1a59c8: Layer already exists
+   1ed7a5e2d1b3: Layer already exists
+   cd7100a72410: Layer already exists
+   latest: digest: sha256:ca29af0618444f37303ed2df1948e440200bbe70e537c0c3cfb0b9afbfad3249 size: 1782
+   #+end_example
+   
+
+   You can also use the simple ~joblog.sh~ script to check the logs of the pods
+   belonging to the job:
+   #+BEGIN_SRC bash :results verbatim :exports both
+   ./joblog.sh docker-image-builder
+   #+END_SRC
+
+   #+RESULTS:
+   #+begin_example
+   -----------------------------------------------------------
+   Logs of docker-image-builder-fzkg8
+   docker build -t docker.origoss.local/dockergit:latest -t origoss/dockergit:18.04.0-ce -t origoss/dockergit:latest  .
+   Sending build context to Docker daemon    128kB
+   Step 1/2 : FROM docker:18.04.0-ce
+    ---> 41e946672182
+   Step 2/2 : RUN apk add --no-cache git
+    ---> Using cache
+    ---> b64c04925efb
+   Successfully built b64c04925efb
+   docker push docker.origoss.local/dockergit:latest
+   The push refers to a repository [docker.origoss.local/dockergit]
+   1760eedac57c: Preparing
+   b446e0d8c3ad: Preparing
+   9b4ada052f34: Preparing
+   ecbc5c1a59c8: Preparing
+   b09386d6aa0f: Preparing
+   1ed7a5e2d1b3: Preparing
+   cd7100a72410: Preparing
+   1ed7a5e2d1b3: Waiting
+   cd7100a72410: Waiting
+   1760eedac57c: Layer already exists
+   ecbc5c1a59c8: Layer already exists
+   b09386d6aa0f: Layer already exists
+   b446e0d8c3ad: Layer already exists
+   9b4ada052f34: Layer already exists
+   1ed7a5e2d1b3: Layer already exists
+   cd7100a72410: Layer already exists
+   latest: digest: sha256:66194bcef7519f144535e78c84b9acbdfd4d06b3fb4f3757b28b9b36a7a48d73 size: 1782
+   docker push origoss/dockergit:18.04.0-ce
+   The push refers to a repository [docker.io/origoss/dockergit]
+   1760eedac57c: Preparing
+   b446e0d8c3ad: Preparing
+   9b4ada052f34: Preparing
+   ecbc5c1a59c8: Preparing
+   b09386d6aa0f: Preparing
+   1ed7a5e2d1b3: Preparing
+   cd7100a72410: Preparing
+   1ed7a5e2d1b3: Waiting
+   cd7100a72410: Waiting
+   9b4ada052f34: Layer already exists
+   b446e0d8c3ad: Layer already exists
+   b09386d6aa0f: Layer already exists
+   ecbc5c1a59c8: Layer already exists
+   1760eedac57c: Layer already exists
+   1ed7a5e2d1b3: Layer already exists
+   cd7100a72410: Layer already exists
+   18.04.0-ce: digest: sha256:ca29af0618444f37303ed2df1948e440200bbe70e537c0c3cfb0b9afbfad3249 size: 1782
+   docker push origoss/dockergit:latest
+   The push refers to a repository [docker.io/origoss/dockergit]
+   1760eedac57c: Preparing
+   b446e0d8c3ad: Preparing
+   9b4ada052f34: Preparing
+   ecbc5c1a59c8: Preparing
+   b09386d6aa0f: Preparing
+   1ed7a5e2d1b3: Preparing
+   cd7100a72410: Preparing
+   1ed7a5e2d1b3: Waiting
+   cd7100a72410: Waiting
+   9b4ada052f34: Layer already exists
+   b09386d6aa0f: Layer already exists
+   b446e0d8c3ad: Layer already exists
+   1760eedac57c: Layer already exists
+   ecbc5c1a59c8: Layer already exists
+   1ed7a5e2d1b3: Layer already exists
+   cd7100a72410: Layer already exists
+   latest: digest: sha256:ca29af0618444f37303ed2df1948e440200bbe70e537c0c3cfb0b9afbfad3249 size: 1782
+   #+end_example
+
+   Finally, you can delete the job
+   #+BEGIN_SRC bash :results verbatim :exports both
+   kubectl delete job/docker-image-builder
+   #+END_SRC
+
+   #+RESULTS:
+   : job.batch "docker-image-builder" deleted
