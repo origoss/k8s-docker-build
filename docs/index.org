@@ -96,7 +96,7 @@
     needed Docker registries from your laptop and a proper config file has been
     created at ~$HOME/.docker/config.json~.
 
-    We can reuse create the Kubernetes secret from this file:
+    We can copy the Docker credentials to the Kubernetes secret from this file:
 
     #+CAPTION: Creating Docker secrets from local config file
     #+BEGIN_SRC bash :results verbatim :exports both

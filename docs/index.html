@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2018-05-11 p 10:37 -->
+<!-- 2018-05-11 p 11:14 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>How to build Dockerfiles in Kubernetes</title>
@@ -240,25 +240,25 @@ for the JavaScript code in this tag.
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#org007de06">1. Introduction</a></li>
-<li><a href="#org6eb1dae">2. Pitfalls</a>
+<li><a href="#org014be15">1. Introduction</a></li>
+<li><a href="#orgc30b02c">2. Pitfalls</a>
 <ul>
-<li><a href="#org3b166a1">2.1. Docker in Docker</a></li>
-<li><a href="#org9ede38d">2.2. Docker Registries and Authentication</a></li>
-<li><a href="#org41f7ff7">2.3. Reusable Kubernetes jobs</a></li>
+<li><a href="#org44c5473">2.1. Docker in Docker</a></li>
+<li><a href="#orgc6563c2">2.2. Docker Registries and Authentication</a></li>
+<li><a href="#orgb5de365">2.3. Reusable Kubernetes jobs</a></li>
 </ul>
 </li>
-<li><a href="#orga957355">3. Building Dockerfiles in Kubernetes</a>
+<li><a href="#orge2a2e49">3. Building Dockerfiles in Kubernetes</a>
 <ul>
-<li><a href="#org6ec2aa1">3.1. Storing the Docker credentials in Kubernetes</a>
+<li><a href="#org55d5629">3.1. Storing the Docker credentials in Kubernetes</a>
 <ul>
-<li><a href="#orga7236ce">3.1.1. Option 1: Copy credentials from your laptop</a></li>
-<li><a href="#orgb53048e">3.1.2. Option 2: Specify credentials directly</a></li>
+<li><a href="#org288f67a">3.1.1. Option 1: Copy credentials from your laptop</a></li>
+<li><a href="#orgd3a0e73">3.1.2. Option 2: Specify credentials directly</a></li>
 </ul>
 </li>
-<li><a href="#org8b0dd5e">3.2. Starting the job</a>
+<li><a href="#org136981c">3.2. Starting the job</a>
 <ul>
-<li><a href="#orgf1d82b6">3.2.1. Starting a job in a reusable way</a></li>
+<li><a href="#org11c0399">3.2.1. Starting a job in a reusable way</a></li>
 </ul>
 </li>
 </ul>
@@ -267,8 +267,8 @@ for the JavaScript code in this tag.
 </div>
 </div>
 
-<div id="outline-container-org007de06" class="outline-2">
-<h2 id="org007de06"><span class="section-number-2">1</span> Introduction</h2>
+<div id="outline-container-org014be15" class="outline-2">
+<h2 id="org014be15"><span class="section-number-2">1</span> Introduction</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 Besides running long running services, Kubernetes can be used to run batch
@@ -282,8 +282,8 @@ wants to highlight a simple and elegant way of performing this task.
 </div>
 </div>
 
-<div id="outline-container-org6eb1dae" class="outline-2">
-<h2 id="org6eb1dae"><span class="section-number-2">2</span> Pitfalls</h2>
+<div id="outline-container-orgc30b02c" class="outline-2">
+<h2 id="orgc30b02c"><span class="section-number-2">2</span> Pitfalls</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 Using Kubernetes jobs to build Dockerfiles seems to be a pretty
@@ -291,8 +291,8 @@ straightforward task at the first sight. There are some pitfalls though.
 </p>
 </div>
 
-<div id="outline-container-org3b166a1" class="outline-3">
-<h3 id="org3b166a1"><span class="section-number-3">2.1</span> Docker in Docker</h3>
+<div id="outline-container-org44c5473" class="outline-3">
+<h3 id="org44c5473"><span class="section-number-3">2.1</span> Docker in Docker</h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
 We assume that your Kubernetes uses Docker as container runtime. That means
@@ -308,8 +308,8 @@ Docker which is discouraged<sup><a id="fnr.1" class="footref" href="#fn.1">1</a>
 </div>
 </div>
 
-<div id="outline-container-org9ede38d" class="outline-3">
-<h3 id="org9ede38d"><span class="section-number-3">2.2</span> Docker Registries and Authentication</h3>
+<div id="outline-container-orgc6563c2" class="outline-3">
+<h3 id="orgc6563c2"><span class="section-number-3">2.2</span> Docker Registries and Authentication</h3>
 <div class="outline-text-3" id="text-2-2">
 <p>
 Even if you manage to execute Docker commands from inside the container, you
@@ -325,8 +325,8 @@ in a meaningful way.
 </div>
 </div>
 
-<div id="outline-container-org41f7ff7" class="outline-3">
-<h3 id="org41f7ff7"><span class="section-number-3">2.3</span> Reusable Kubernetes jobs</h3>
+<div id="outline-container-orgb5de365" class="outline-3">
+<h3 id="orgb5de365"><span class="section-number-3">2.3</span> Reusable Kubernetes jobs</h3>
 <div class="outline-text-3" id="text-2-3">
 <p>
 Kubernetes resources (the more complex ones at least) are deployed via
@@ -343,8 +343,8 @@ addresses exactly this issue. Unfortunately, Helm does not support jobs&#x2026;
 </div>
 </div>
 
-<div id="outline-container-orga957355" class="outline-2">
-<h2 id="orga957355"><span class="section-number-2">3</span> Building Dockerfiles in Kubernetes</h2>
+<div id="outline-container-orge2a2e49" class="outline-2">
+<h2 id="orge2a2e49"><span class="section-number-2">3</span> Building Dockerfiles in Kubernetes</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 The task we want to perform is to take a given git repository that contains a
@@ -367,8 +367,8 @@ Let's first take care of the last in the list: Docker registry credentials.
 </p>
 </div>
 
-<div id="outline-container-org6ec2aa1" class="outline-3">
-<h3 id="org6ec2aa1"><span class="section-number-3">3.1</span> Storing the Docker credentials in Kubernetes</h3>
+<div id="outline-container-org55d5629" class="outline-3">
+<h3 id="org55d5629"><span class="section-number-3">3.1</span> Storing the Docker credentials in Kubernetes</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
 Following the best practices, we will store our credentials as Kubernetes
@@ -376,8 +376,8 @@ Following the best practices, we will store our credentials as Kubernetes
 </p>
 </div>
 
-<div id="outline-container-orga7236ce" class="outline-4">
-<h4 id="orga7236ce"><span class="section-number-4">3.1.1</span> Option 1: Copy credentials from your laptop</h4>
+<div id="outline-container-org288f67a" class="outline-4">
+<h4 id="org288f67a"><span class="section-number-4">3.1.1</span> Option 1: Copy credentials from your laptop</h4>
 <div class="outline-text-4" id="text-3-1-1">
 <p>
 This may be the simpler case. We assume that you have logged in to all the
@@ -386,7 +386,7 @@ created at <code>$HOME/.docker/config.json</code>.
 </p>
 
 <p>
-We can reuse create the Kubernetes secret from this file:
+We can copy the Docker credentials to the Kubernetes secret from this file:
 </p>
 
 <div class="org-src-container">
@@ -402,8 +402,8 @@ secret "docker-image-builder-secret" created
 </div>
 </div>
 
-<div id="outline-container-orgb53048e" class="outline-4">
-<h4 id="orgb53048e"><span class="section-number-4">3.1.2</span> Option 2: Specify credentials directly</h4>
+<div id="outline-container-orgd3a0e73" class="outline-4">
+<h4 id="orgd3a0e73"><span class="section-number-4">3.1.2</span> Option 2: Specify credentials directly</h4>
 <div class="outline-text-4" id="text-3-1-2">
 <p>
 Another option is to create the secret by specifying the credentials
@@ -427,8 +427,8 @@ secret "docker-image-builder-secret" created
 </div>
 </div>
 
-<div id="outline-container-org8b0dd5e" class="outline-3">
-<h3 id="org8b0dd5e"><span class="section-number-3">3.2</span> Starting the job</h3>
+<div id="outline-container-org136981c" class="outline-3">
+<h3 id="org136981c"><span class="section-number-3">3.2</span> Starting the job</h3>
 <div class="outline-text-3" id="text-3-2">
 <p>
 The next task is to create a Kubernetes job which:
@@ -453,8 +453,8 @@ simple task for an experienced Kubernetes user.
 </p>
 </div>
 
-<div id="outline-container-orgf1d82b6" class="outline-4">
-<h4 id="orgf1d82b6"><span class="section-number-4">3.2.1</span> Starting a job in a reusable way</h4>
+<div id="outline-container-org11c0399" class="outline-4">
+<h4 id="org11c0399"><span class="section-number-4">3.2.1</span> Starting a job in a reusable way</h4>
 <div class="outline-text-4" id="text-3-2-1">
 <p>
 We will use the tool <a href="https://github.com/origoss/yemplate">yemplate</a> for starting the job. First, let's install
@@ -621,7 +621,7 @@ job.batch "docker-image-builder" created
 <div id="postamble" class="status">
 <p class="date">Date: 2018-05-10 cs 00:00</p>
 <p class="author">Author: Gergely Szabo</p>
-<p class="date">Created: 2018-05-11 p 10:37</p>
+<p class="date">Created: 2018-05-11 p 11:14</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>
