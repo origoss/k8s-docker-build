@@ -1,0 +1,5 @@
+gitrepo: https://github.com/origoss/dockergit.git
+tags:
+- docker.origoss.local/dockergit:latest
+- origoss/dockergit:18.04.0-ce
+- origoss/dockergit:latest

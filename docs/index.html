@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2018-05-10 cs 17:31 -->
+<!-- 2018-05-11 p 10:37 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>How to build Dockerfiles in Kubernetes</title>
@@ -240,25 +240,25 @@ for the JavaScript code in this tag.
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#org4a967f2">1. Introduction</a></li>
-<li><a href="#orgd5d3fe0">2. Pitfalls</a>
+<li><a href="#org007de06">1. Introduction</a></li>
+<li><a href="#org6eb1dae">2. Pitfalls</a>
 <ul>
-<li><a href="#org9eab11b">2.1. Docker in Docker</a></li>
-<li><a href="#org850a2ec">2.2. Docker Registries and Authentication</a></li>
-<li><a href="#org2cdd0e0">2.3. Reusable Kubernetes jobs</a></li>
+<li><a href="#org3b166a1">2.1. Docker in Docker</a></li>
+<li><a href="#org9ede38d">2.2. Docker Registries and Authentication</a></li>
+<li><a href="#org41f7ff7">2.3. Reusable Kubernetes jobs</a></li>
 </ul>
 </li>
-<li><a href="#orgc59364b">3. Building Dockerfiles in Kubernetes</a>
+<li><a href="#orga957355">3. Building Dockerfiles in Kubernetes</a>
 <ul>
-<li><a href="#org87c6ef8">3.1. Storing the Docker credentials in Kubernetes</a>
+<li><a href="#org6ec2aa1">3.1. Storing the Docker credentials in Kubernetes</a>
 <ul>
-<li><a href="#org621c733">3.1.1. Option 1: Copy credentials from your laptop</a></li>
-<li><a href="#orgdda9208">3.1.2. Option 2: Specify credentials directly</a></li>
+<li><a href="#orga7236ce">3.1.1. Option 1: Copy credentials from your laptop</a></li>
+<li><a href="#orgb53048e">3.1.2. Option 2: Specify credentials directly</a></li>
 </ul>
 </li>
-<li><a href="#org08f45a3">3.2. Starting the job</a>
+<li><a href="#org8b0dd5e">3.2. Starting the job</a>
 <ul>
-<li><a href="#orgda55a8c">3.2.1. Starting a job in a reusable way</a></li>
+<li><a href="#orgf1d82b6">3.2.1. Starting a job in a reusable way</a></li>
 </ul>
 </li>
 </ul>
@@ -267,8 +267,8 @@ for the JavaScript code in this tag.
 </div>
 </div>
 
-<div id="outline-container-org4a967f2" class="outline-2">
-<h2 id="org4a967f2"><span class="section-number-2">1</span> Introduction</h2>
+<div id="outline-container-org007de06" class="outline-2">
+<h2 id="org007de06"><span class="section-number-2">1</span> Introduction</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 Besides running long running services, Kubernetes can be used to run batch
@@ -282,8 +282,8 @@ wants to highlight a simple and elegant way of performing this task.
 </div>
 </div>
 
-<div id="outline-container-orgd5d3fe0" class="outline-2">
-<h2 id="orgd5d3fe0"><span class="section-number-2">2</span> Pitfalls</h2>
+<div id="outline-container-org6eb1dae" class="outline-2">
+<h2 id="org6eb1dae"><span class="section-number-2">2</span> Pitfalls</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 Using Kubernetes jobs to build Dockerfiles seems to be a pretty
@@ -291,8 +291,8 @@ straightforward task at the first sight. There are some pitfalls though.
 </p>
 </div>
 
-<div id="outline-container-org9eab11b" class="outline-3">
-<h3 id="org9eab11b"><span class="section-number-3">2.1</span> Docker in Docker</h3>
+<div id="outline-container-org3b166a1" class="outline-3">
+<h3 id="org3b166a1"><span class="section-number-3">2.1</span> Docker in Docker</h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
 We assume that your Kubernetes uses Docker as container runtime. That means
@@ -300,7 +300,7 @@ that each of your host machine runs a Docker engine.
 </p>
 
 <p>
-Jobs, are realized as Pods running a single container. If you want to use
+Jobs are realized as Pods running a single container. If you want to use
 Docker commands (like <code>docker build</code>, <code>docker push</code>, etc.) from Jobs (i.e.
 from inside a container) you are facing the problem of running Docker inside
 Docker which is discouraged<sup><a id="fnr.1" class="footref" href="#fn.1">1</a></sup> in general.
@@ -308,14 +308,14 @@ Docker which is discouraged<sup><a id="fnr.1" class="footref" href="#fn.1">1</a>
 </div>
 </div>
 
-<div id="outline-container-org850a2ec" class="outline-3">
-<h3 id="org850a2ec"><span class="section-number-3">2.2</span> Docker Registries and Authentication</h3>
+<div id="outline-container-org9ede38d" class="outline-3">
+<h3 id="org9ede38d"><span class="section-number-3">2.2</span> Docker Registries and Authentication</h3>
 <div class="outline-text-3" id="text-2-2">
 <p>
 Even if you manage to execute Docker commands from inside the container, you
-might be surprised when your first <code>docker push</code> command fails. Because the
-<code>push</code> command succeeds only when you are successfully authorized by the
-given Docker registry.
+might be surprised when your first try to <code>docker push</code> the built image.
+That's because the <code>push</code> command succeeds only when you are successfully
+authorized by the Docker registry.
 </p>
 
 <p>
@@ -325,32 +325,32 @@ in a meaningful way.
 </div>
 </div>
 
-<div id="outline-container-org2cdd0e0" class="outline-3">
-<h3 id="org2cdd0e0"><span class="section-number-3">2.3</span> Reusable Kubernetes jobs</h3>
+<div id="outline-container-org41f7ff7" class="outline-3">
+<h3 id="org41f7ff7"><span class="section-number-3">2.3</span> Reusable Kubernetes jobs</h3>
 <div class="outline-text-3" id="text-2-3">
 <p>
-Kubernetes resources (the more complex ones at least) are described by a
-manifest file. The manifest file of a given deployment, pod, service, job
+Kubernetes resources (the more complex ones at least) are deployed via
+manifest files. The manifest file of a given deployment, pod, service, job
 etc. varies a bit from deployment to deployment that makes the manifest files
 hard to reuse.
 </p>
 
 <p>
-For deployments, services, etc. resource types, we can use Helm packages that
+For deployments, services, etc. resource types, we can use <a href="https://helm.sh/">Helm</a> that
 addresses exactly this issue. Unfortunately, Helm does not support jobs&#x2026;
 </p>
 </div>
 </div>
 </div>
 
-<div id="outline-container-orgc59364b" class="outline-2">
-<h2 id="orgc59364b"><span class="section-number-2">3</span> Building Dockerfiles in Kubernetes</h2>
+<div id="outline-container-orga957355" class="outline-2">
+<h2 id="orga957355"><span class="section-number-2">3</span> Building Dockerfiles in Kubernetes</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 The task we want to perform is to take a given git repository that contains a
-Dockerfile and potentially other helper files and build it in a Kubernetes
-cluster. Finally, we want to push the resulted Docker image to one or more
-Docker repositories.
+Dockerfile and potentially other helper files and build a Docker images in a
+Kubernetes cluster. Finally, we want to push the resulted Docker image to one
+or more Docker repositories.
 </p>
 
 <p>
@@ -367,8 +367,8 @@ Let's first take care of the last in the list: Docker registry credentials.
 </p>
 </div>
 
-<div id="outline-container-org87c6ef8" class="outline-3">
-<h3 id="org87c6ef8"><span class="section-number-3">3.1</span> Storing the Docker credentials in Kubernetes</h3>
+<div id="outline-container-org6ec2aa1" class="outline-3">
+<h3 id="org6ec2aa1"><span class="section-number-3">3.1</span> Storing the Docker credentials in Kubernetes</h3>
 <div class="outline-text-3" id="text-3-1">
 <p>
 Following the best practices, we will store our credentials as Kubernetes
@@ -376,8 +376,8 @@ Following the best practices, we will store our credentials as Kubernetes
 </p>
 </div>
 
-<div id="outline-container-org621c733" class="outline-4">
-<h4 id="org621c733"><span class="section-number-4">3.1.1</span> Option 1: Copy credentials from your laptop</h4>
+<div id="outline-container-orga7236ce" class="outline-4">
+<h4 id="orga7236ce"><span class="section-number-4">3.1.1</span> Option 1: Copy credentials from your laptop</h4>
 <div class="outline-text-4" id="text-3-1-1">
 <p>
 This may be the simpler case. We assume that you have logged in to all the
@@ -402,8 +402,8 @@ secret "docker-image-builder-secret" created
 </div>
 </div>
 
-<div id="outline-container-orgdda9208" class="outline-4">
-<h4 id="orgdda9208"><span class="section-number-4">3.1.2</span> Option 2: Specify credentials directly</h4>
+<div id="outline-container-orgb53048e" class="outline-4">
+<h4 id="orgb53048e"><span class="section-number-4">3.1.2</span> Option 2: Specify credentials directly</h4>
 <div class="outline-text-4" id="text-3-1-2">
 <p>
 Another option is to create the secret by specifying the credentials
@@ -427,8 +427,8 @@ secret "docker-image-builder-secret" created
 </div>
 </div>
 
-<div id="outline-container-org08f45a3" class="outline-3">
-<h3 id="org08f45a3"><span class="section-number-3">3.2</span> Starting the job</h3>
+<div id="outline-container-org8b0dd5e" class="outline-3">
+<h3 id="org8b0dd5e"><span class="section-number-3">3.2</span> Starting the job</h3>
 <div class="outline-text-3" id="text-3-2">
 <p>
 The next task is to create a Kubernetes job which:
@@ -453,8 +453,8 @@ simple task for an experienced Kubernetes user.
 </p>
 </div>
 
-<div id="outline-container-orgda55a8c" class="outline-4">
-<h4 id="orgda55a8c"><span class="section-number-4">3.2.1</span> Starting a job in a reusable way</h4>
+<div id="outline-container-orgf1d82b6" class="outline-4">
+<h4 id="orgf1d82b6"><span class="section-number-4">3.2.1</span> Starting a job in a reusable way</h4>
 <div class="outline-text-4" id="text-3-2-1">
 <p>
 We will use the tool <a href="https://github.com/origoss/yemplate">yemplate</a> for starting the job. First, let's install
@@ -467,7 +467,7 @@ We will use the tool <a href="https://github.com/origoss/yemplate">yemplate</a> 
 </div>
 
 <p>
-<code>yemplate</code> let's us to create job manifest templates similarly to Helm
+With <code>yemplate</code> we can create job manifest templates similarly to Helm
 charts.
 </p>
 
@@ -475,27 +475,27 @@ charts.
 An example job manifest template can be found <a href="https://raw.githubusercontent.com/origoss/k8s-docker-build/master/docker-build.yaml.t">here</a>. We will use it to build
 and push a Docker image with the following parameters:
 </p>
-<ul class="org-ul">
-<li><b>git repository</b> where the Dockerfile is stored is at
-<a href="https://github.com/origoss/dockergit.git">https://github.com/origoss/dockergit.git.</a></li>
-<li><b>tags</b> of the resulting image are:
+<dl class="org-dl">
+<dt>git repository</dt><dd>where the Dockerfile is stored is at
+<a href="https://github.com/origoss/dockergit.git">https://github.com/origoss/dockergit.git.</a></dd>
+<dt>tags</dt><dd>of the resulting image are:
 <ul class="org-ul">
 <li>docker.origoss.local/dockergit:latest</li>
 <li>origoss/dockergit:18.04.0-ce</li>
 <li>origoss/dockergit:latest</li>
-</ul></li>
-</ul>
+</ul></dd>
+</dl>
 
 <p>
 First, we check the job manifest that is created by <code>yemplate</code>.
 </p>
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 3: </span>Creating the job manifest from template</label><pre class="src src-bash">yemplate -s <span style="color: #2d9574;">"gitrepo=https://github.com/origoss/dockergit.git"</span> <span style="color: #2d9574;">\</span>
-         -s <span style="color: #2d9574;">"tags[0]=docker.origoss.local/dockergit:latest"</span>    <span style="color: #2d9574;">\</span>
-         -s <span style="color: #2d9574;">"tags[1]=origoss/dockergit:18.04.0-ce"</span>             <span style="color: #2d9574;">\</span>
-         -s <span style="color: #2d9574;">"tags[2]=origoss/dockergit:latest"</span>                 <span style="color: #2d9574;">\</span>
-         -t https://raw.githubusercontent.com/origoss/k8s-docker-build/master/docker-build.yaml.t
+<label class="org-src-name"><span class="listing-number">Listing 3: </span>Creating the job manifest from template</label><pre class="src src-bash">yemplate https://raw.githubusercontent.com/origoss/k8s-docker-build/master/docker-build.yaml.t <span style="color: #2d9574;">\</span>
+    --set <span style="color: #2d9574;">"gitrepo=https://github.com/origoss/dockergit.git"</span>                                   <span style="color: #2d9574;">\</span>
+    --set <span style="color: #2d9574;">"tags[0]=docker.origoss.local/dockergit:latest"</span>                                      <span style="color: #2d9574;">\</span>
+    --set <span style="color: #2d9574;">"tags[1]=origoss/dockergit:18.04.0-ce"</span>                                               <span style="color: #2d9574;">\</span>
+    --set <span style="color: #2d9574;">"tags[2]=origoss/dockergit:latest"</span>
 </pre>
 </div>
 
@@ -561,11 +561,40 @@ Kubernetes.
 </p>
 
 <div class="org-src-container">
-<label class="org-src-name"><span class="listing-number">Listing 4: </span>Running the templated job in Kubernetes</label><pre class="src src-bash">yemplate -s <span style="color: #2d9574;">"gitrepo=https://github.com/origoss/dockergit.git"</span> <span style="color: #2d9574;">\</span>
-         -s <span style="color: #2d9574;">"tags[0]=docker.origoss.local/dockergit:latest"</span>    <span style="color: #2d9574;">\</span>
-         -s <span style="color: #2d9574;">"tags[1]=origoss/dockergit:18.04.0-ce"</span>             <span style="color: #2d9574;">\</span>
-         -s <span style="color: #2d9574;">"tags[2]=origoss/dockergit:latest"</span>                 <span style="color: #2d9574;">\</span>
-         -t https://raw.githubusercontent.com/origoss/k8s-docker-build/master/docker-build.yaml.t | <span style="color: #2d9574;">\</span>
+<label class="org-src-name"><span class="listing-number">Listing 4: </span>Running the templated job in Kubernetes</label><pre class="src src-bash">yemplate https://raw.githubusercontent.com/origoss/k8s-docker-build/master/docker-build.yaml.t <span style="color: #2d9574;">\</span>
+         --set <span style="color: #2d9574;">"gitrepo=https://github.com/origoss/dockergit.git"</span>                              <span style="color: #2d9574;">\</span>
+         --set <span style="color: #2d9574;">"tags[0]=docker.origoss.local/dockergit:latest"</span>                                 <span style="color: #2d9574;">\</span>
+         --set <span style="color: #2d9574;">"tags[1]=origoss/dockergit:18.04.0-ce"</span>                                          <span style="color: #2d9574;">\</span>
+         --set <span style="color: #2d9574;">"tags[2]=origoss/dockergit:latest"</span> |                                            <span style="color: #2d9574;">\</span>
+    kubectl apply -f -
+</pre>
+</div>
+
+<pre class="example">
+job.batch "docker-image-builder" created
+
+</pre>
+
+<p>
+If you are concerned with the many <code>--set</code> parameters you can create a yaml
+file with the parameter settings.
+</p>
+
+<div class="org-src-container">
+<label class="org-src-name"><span class="listing-number">Listing 5: </span>params.yaml</label><pre class="src src-yaml"><span style="color: #7590db;">gitrepo</span>: https://github.com/origoss/dockergit.git
+<span style="color: #7590db;">tags</span>:
+- docker.origoss.local/dockergit:latest
+- origoss/dockergit:18.04.0-ce
+- origoss/dockergit:latest
+</pre>
+</div>
+
+<p>
+We can run the job that reads the parameters from the <code>params.yaml</code> file.
+</p>
+<div class="org-src-container">
+<label class="org-src-name"><span class="listing-number">Listing 6: </span>Running the templated job in Kubernetes</label><pre class="src src-bash">yemplate https://raw.githubusercontent.com/origoss/k8s-docker-build/master/docker-build.yaml.t <span style="color: #2d9574;">\</span>
+         -f params.yaml |                                                                      <span style="color: #2d9574;">\</span>
     kubectl apply -f -
 </pre>
 </div>
@@ -592,7 +621,7 @@ job.batch "docker-image-builder" created
 <div id="postamble" class="status">
 <p class="date">Date: 2018-05-10 cs 00:00</p>
 <p class="author">Author: Gergely Szabo</p>
-<p class="date">Created: 2018-05-10 cs 17:31</p>
+<p class="date">Created: 2018-05-11 p 10:37</p>
 <p class="validation"><a href="http://validator.w3.org/check?uri=referer">Validate</a></p>
 </div>
 </body>

@@ -46,7 +46,7 @@
    We assume that your Kubernetes uses Docker as container runtime. That means
    that each of your host machine runs a Docker engine.
 
-   Jobs, are realized as Pods running a single container. If you want to use
+   Jobs are realized as Pods running a single container. If you want to use
    Docker commands (like ~docker build~, ~docker push~, etc.) from Jobs (i.e.
    from inside a container) you are facing the problem of running Docker inside
    Docker which is discouraged[fn:1] in general.
@@ -54,29 +54,29 @@
 ** Docker Registries and Authentication
 
    Even if you manage to execute Docker commands from inside the container, you
-   might be surprised when your first ~docker push~ command fails. Because the
-   ~push~ command succeeds only when you are successfully authorized by the
-   given Docker registry.
+   might be surprised when your first try to ~docker push~ the built image.
+   That's because the ~push~ command succeeds only when you are successfully
+   authorized by the Docker registry.
 
    That's a minor issue only and Kubernetes is designed to mitigate such issues
    in a meaningful way.
 
 ** Reusable Kubernetes jobs
 
-   Kubernetes resources (the more complex ones at least) are described by a
-   manifest file. The manifest file of a given deployment, pod, service, job
+   Kubernetes resources (the more complex ones at least) are deployed via
+   manifest files. The manifest file of a given deployment, pod, service, job
    etc. varies a bit from deployment to deployment that makes the manifest files
    hard to reuse.
 
-   For deployments, services, etc. resource types, we can use Helm packages that
+   For deployments, services, etc. resource types, we can use [[https://helm.sh/][Helm]] that
    addresses exactly this issue. Unfortunately, Helm does not support jobs...
 
 * Building Dockerfiles in Kubernetes
   
   The task we want to perform is to take a given git repository that contains a
-  Dockerfile and potentially other helper files and build it in a Kubernetes
-  cluster. Finally, we want to push the resulted Docker image to one or more
-  Docker repositories.
+  Dockerfile and potentially other helper files and build a Docker images in a
+  Kubernetes cluster. Finally, we want to push the resulted Docker image to one
+  or more Docker repositories.
 
   So our inputs are:
   - URL of a git repository
@@ -151,14 +151,14 @@
 
     #+RESULTS:
 
-    ~yemplate~ let's us to create job manifest templates similarly to Helm
+    With ~yemplate~ we can create job manifest templates similarly to Helm
     charts.
 
     An example job manifest template can be found [[https://raw.githubusercontent.com/origoss/k8s-docker-build/master/docker-build.yaml.t][here]]. We will use it to build
     and push a Docker image with the following parameters:
-    - *git repository* where the Dockerfile is stored is at
+    - git repository :: where the Dockerfile is stored is at
       [[https://github.com/origoss/dockergit.git][https://github.com/origoss/dockergit.git.]]
-    - *tags* of the resulting image are:
+    - tags :: of the resulting image are:
       - docker.origoss.local/dockergit:latest
       - origoss/dockergit:18.04.0-ce
       - origoss/dockergit:latest
@@ -167,15 +167,15 @@
 
     #+CAPTION: Creating the job manifest from template
     #+BEGIN_SRC bash :results verbatim :exports both
-      yemplate -s "gitrepo=https://github.com/origoss/dockergit.git" \
-               -s "tags[0]=docker.origoss.local/dockergit:latest"    \
-               -s "tags[1]=origoss/dockergit:18.04.0-ce"             \
-               -s "tags[2]=origoss/dockergit:latest"                 \
-               -t https://raw.githubusercontent.com/origoss/k8s-docker-build/master/docker-build.yaml.t
+      yemplate https://raw.githubusercontent.com/origoss/k8s-docker-build/master/docker-build.yaml.t \
+          --set "gitrepo=https://github.com/origoss/dockergit.git"                                   \
+          --set "tags[0]=docker.origoss.local/dockergit:latest"                                      \
+          --set "tags[1]=origoss/dockergit:18.04.0-ce"                                               \
+          --set "tags[2]=origoss/dockergit:latest"
     #+END_SRC
 
     #+RESULTS:
-    #+BEGIN_SRC yaml
+    #+begin_src yaml
     apiVersion: batch/v1
     kind: Job
     metadata:
@@ -228,18 +228,41 @@
           - name: gitrepo
             gitRepo:
               repository: https://github.com/origoss/dockergit.git
-    #+END_SRC
+    #+end_src
     
     We can use this template to run the job and build and push our Dockerfile in
     Kubernetes.
 
     #+CAPTION: Running the templated job in Kubernetes
     #+BEGIN_SRC bash :results verbatim :exports both
-      yemplate -s "gitrepo=https://github.com/origoss/dockergit.git" \
-               -s "tags[0]=docker.origoss.local/dockergit:latest"    \
-               -s "tags[1]=origoss/dockergit:18.04.0-ce"             \
-               -s "tags[2]=origoss/dockergit:latest"                 \
-               -t https://raw.githubusercontent.com/origoss/k8s-docker-build/master/docker-build.yaml.t | \
+      yemplate https://raw.githubusercontent.com/origoss/k8s-docker-build/master/docker-build.yaml.t \
+               --set "gitrepo=https://github.com/origoss/dockergit.git"                              \
+               --set "tags[0]=docker.origoss.local/dockergit:latest"                                 \
+               --set "tags[1]=origoss/dockergit:18.04.0-ce"                                          \
+               --set "tags[2]=origoss/dockergit:latest" |                                            \
+          kubectl apply -f -
+    #+END_SRC
+
+    #+RESULTS:
+    : job.batch "docker-image-builder" created
+
+    If you are concerned with the many ~--set~ parameters you can create a yaml
+    file with the parameter settings.
+
+    #+CAPTION: params.yaml
+    #+BEGIN_SRC yaml :tangle params.yaml
+      gitrepo: https://github.com/origoss/dockergit.git
+      tags:
+      - docker.origoss.local/dockergit:latest
+      - origoss/dockergit:18.04.0-ce
+      - origoss/dockergit:latest
+    #+END_SRC
+
+    We can run the job that reads the parameters from the ~params.yaml~ file.
+    #+CAPTION: Running the templated job in Kubernetes
+    #+BEGIN_SRC bash :results verbatim :exports both
+      yemplate https://raw.githubusercontent.com/origoss/k8s-docker-build/master/docker-build.yaml.t \
+               -f params.yaml |                                                                      \
           kubectl apply -f -
     #+END_SRC
 
